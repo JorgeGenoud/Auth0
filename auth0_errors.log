@@ -1,8 +1,0 @@
-2026-01-14 18:35:28,100 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Grant type 'password' not allowed for the client.
-2026-01-14 18:40:58,302 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Grant type 'password' not allowed for the client.
-2026-01-14 18:44:36,971 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Authorization server not configured with default connection.
-2026-01-14 18:59:59,262 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Authorization server not configured with default connection.
-2026-01-14 19:01:01,777 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Authorization server not configured with default connection.
-2026-01-14 19:27:39,520 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Authorization server not configured with default connection.
-2026-01-14 19:27:45,662 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Authorization server not configured with default connection.
-2026-01-14 19:29:42,706 - auth0_api - ERROR - Authentication failed for user jorge.genoud@gmail.com: Authorization server not configured with default connection.
