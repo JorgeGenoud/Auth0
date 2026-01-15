@@ -1,0 +1,122 @@
+GUIA COMPLETA DE INTEGRACION Y CONFIGURACION AUTH0
+==================================================
+
+Esta guía consolida todos los pasos necesarios para configurar exitosamente la integración de Auth0 con esta API FastAPI, incluyendo la solución a problemas comunes encontrados durante el desarrollo.
+
+1. CONFIGURACION EN AUTH0 DASHBOARD
+-----------------------------------
+Antes de tocar el código, debe configurar su tenant de Auth0 correctamente.
+
+### 1.1 Crear la API
+1. Vaya a **Applications** > **APIs**.
+2. Cree una nueva API (o use la "Auth0 Management API" existente si es para administración interna, pero idealmente cree una para su backend).
+3. **Identifier (Audience)**: `https://su-dominio.us.auth0.com/api/v2/` (o su propia URL). Guarde este valor para `AUTH0_API_AUDIENCE`.
+
+### 1.2 Configurar la Aplicación (Machine to Machine)
+Esta aplicación permitirá a su backend obtener el token de "Management" para crear/borrar usuarios.
+1. Vaya a **Applications** > **Applications**.
+2. Cree una app "Machine to Machine" (o seleccione la existente).
+3. Copie el **Client ID** y **Client Secret**.
+4. Vaya a la pestaña **APIs** y autorice a la "Auth0 Management API".
+5. **Permisos Requeridos (Scopes)**: Asegúrese de habilitar al menos:
+   - `read:users`, `update:users`, `delete:users`, `create:users`
+   - `read:connections` (CRITICO para debugging)
+
+### 1.3 Habilitar Login con Contraseña (Resource Owner Password Grant)
+Este paso es crucial para que el endpoint `/auth/login` funcione.
+1. En la misma aplicación (o en la que use para login), vaya a **Settings** (abajo del todo) > **Advanced Settings**.
+2. Vaya a la pestaña **Grant Types**.
+3. **Marque la casilla "Password"**.
+4. Guarde los cambios.
+
+2. INSTALACION DEL PROYECTO
+---------------------------
+1. Instale las dependencias de Python:
+   ```bash
+   pip install -r requirements.txt
+   pip install "PyJWT[crypto]"
+   ```
+
+3. CONFIGURACION DEL ENTORNO (.env)
+-----------------------------------
+Cree un archivo `.env` en la raíz con el siguiente contenido.
+
+```env
+API_TITLE=Auth0 Management API
+API_VERSION=v1
+DEBUG=True
+
+# Configuración JWT (Local)
+# Genere una clave segura con: openssl rand -hex 32
+JWT_SECRET_KEY=su_clave_secreta_generada_aqui
+JWT_ALGORITHM=RS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Configuración Auth0
+# Su dominio (ej: dev-xyz.us.auth0.com)
+AUTH0_DOMAIN=su-dominio.auth0.com
+
+# Identificador de la API (generalmente la de management para este proyecto)
+AUTH0_API_AUDIENCE=https://su-dominio.auth0.com/api/v2/
+
+# Credenciales de la App Machine-to-Machine
+AUTH0_CLIENT_ID=su_client_id
+AUTH0_CLIENT_SECRET=su_client_secret
+
+# Token opcional (el sistema lo obtiene automáticamente si deja esto vacío)
+AUTH0_MANAGEMENT_TOKEN=
+```
+
+4. EJECUCION
+------------
+1. Asegúrese de liberar el puerto 8000 si estaba en uso:
+   ```bash
+   killall -9 uvicorn
+   ```
+2. Inicie el servidor:
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+5. USO DEL LOGIN
+----------------
+Para iniciar sesión, el sistema usa internamente el grant type `http://auth0.com/oauth/grant-type/password-realm` para especificar la conexión de base de datos correcta.
+
+**Petición cURL:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "username": "usuario@ejemplo.com",
+           "password": "Password123!"
+         }'
+```
+
+**Respuesta Exitosa:**
+```json
+{
+    "access_token": "eyJhbGci...",
+    "token_type": "bearer"
+}
+```
+
+6. SOLUCION DE ERROR COMUNES
+----------------------------
+
+### Error: "Grant type 'password' not allowed for the client."
+**Causa:** No activó el checkbox "Password" en *Advanced Settings > Grant Types* en Auth0.
+**Solución:** Vaya al Dashboard y actívelo (Paso 1.3).
+
+### Error: "Authorization server not configured with default connection."
+**Causa:** Auth0 no sabe en qué base de datos buscar el usuario.
+**Solución:** 
+1. El código ya envía el parámetro `realm: "Username-Password-Authentication"`.
+2. Si falla, verifique el nombre real de su conexión ejecutando:
+   ```bash
+   python3 tests/debug_connections.py
+   ```
+   (Requiere permiso `read:connections` en la App M2M).
+
+### Logs de Errores
+El sistema registra errores detallados de Auth0 en el archivo:
+`auth0_errors.log` (en la raíz del proyecto).
